@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101c29">
+  <meta name="description" content="选择牵绊加成礼装，再按职阶和星级查找适用的 FGO 从者。">
+  <title>迦勒底 · 牵绊图鉴</title>
+  <link rel="icon" href="./sigil.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="frame mast-inner">
+      <div class="brand"><img src="./sigil.svg" width="34" height="34" alt=""><span>迦勒底档案<span class="brand-en">CHALDEA ARCHIVE</span></span></div>
+      <label class="region"><span class="beacon" aria-hidden="true"></span><span class="sr-only">图鉴范围</span>
+        <select id="region" disabled><option value="cn">国服已实装</option><option value="all">含国服未实装</option></select>
+      </label>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="frame hero-inner">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="dash"></span> FATE / GRAND ORDER <span class="edition">档案 01</span></div>
+          <h1>牵绊图鉴<span>✦</span></h1>
+          <p>选一张加成礼装，看看哪些从者能多拿牵绊。</p>
+        </div>
+        <div class="orrery" aria-hidden="true">
+          <svg viewBox="0 0 380 240" fill="none">
+            <defs><pattern id="field" width="15" height="15" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#99aeb4" opacity=".24"/></pattern></defs>
+            <path d="M0 0H380V240H0Z" fill="url(#field)"/>
+            <g stroke="#87a3ab" stroke-opacity=".47">
+              <circle cx="226" cy="119" r="94"/><circle cx="226" cy="119" r="84" stroke-dasharray="1 4"/><circle cx="226" cy="119" r="67"/>
+              <ellipse cx="226" cy="119" rx="140" ry="42" transform="rotate(-27 226 119)"/>
+              <ellipse cx="226" cy="119" rx="96" ry="38" transform="rotate(56 226 119)"/>
+              <path d="M226 11v216M80 119h287M147 40l158 158m-158 0L305 40" stroke-dasharray="3 6"/>
+            </g>
+            <g stroke="#dbbe83"><path d="m226 75 9 34 35 10-35 9-9 35-9-35-35-9 35-10z"/><path d="m226 103 16 16-16 16-16-16z" fill="#dbbe83" fill-opacity=".45"/>
+              <circle cx="226" cy="119" r="53" stroke-opacity=".38" stroke-dasharray="12 9"/>
+              <circle cx="309" cy="59" r="4" fill="#dbbe83"/><circle cx="144" cy="157" r="3" fill="#dbbe83"/><circle cx="206" cy="42" r="3" fill="#101c29"/>
+              <path d="M346 77v12m-6-6h12M120 46v10m-5-5h10M335 184v10m-5-5h10" stroke-opacity=".75"/>
+            </g>
+          </svg>
+        </div>
+        <dl class="catalogue-stats" aria-label="图鉴范围">
+          <div><dt>加成礼装</dt><dd id="craft-total">—</dd></div>
+          <div><dt>可编入从者</dt><dd id="servant-total">—</dd></div>
+        </dl>
+      </div>
+    </section>
+    <div id="load-error" class="frame load-error" role="alert" hidden>图鉴数据未能载入。<button type="button" id="retry">重新加载</button></div>
+    <div class="frame desk" id="desk" aria-busy="true">
+      <aside class="query" aria-label="查询条件">
+        <div class="panel-header"><span>检索条件</span><button type="button" id="reset" disabled>清除筛选</button></div>
+        <div class="step">
+          <span class="step-label"><b>01</b> 选择礼装</span>
+          <button type="button" class="choice" id="open-picker" aria-haspopup="dialog" disabled>
+            <span class="choice-art" id="chosen-art" aria-hidden="true">✦</span>
+            <span class="choice-text"><strong id="chosen-name">正在载入图鉴</strong><span id="chosen-caption">概念礼装</span></span>
+            <span class="choice-arrow" aria-hidden="true">⌄</span>
+          </button>
+          <div id="effect" class="effect"></div>
+          <p class="condition" id="condition"></p>
+          <a class="text-link" id="craft-link" target="_blank" rel="noopener" hidden>查看 Mooncell 礼装资料 ↗</a>
+        </div>
+        <div class="step">
+          <label class="step-label" for="class-filter"><b>02</b> 选择职阶</label>
+          <select id="class-filter" class="field" disabled><option value="">全部职阶</option></select>
+        </div>
+        <div class="step">
+          <div class="step-label" id="star-title"><b>03</b> 选择星级</div>
+          <div class="star-options" id="star-filter" role="group" aria-labelledby="star-title"></div>
+        </div>
+      </aside>
+      <section class="results" aria-labelledby="result-title">
+        <div class="results-header">
+          <div>
+            <div class="overline">MATCHING SERVANTS</div>
+            <h2 id="result-title">适用从者 <span id="match-count" class="count" aria-hidden="true">—</span></h2>
+          </div>
+          <label class="find"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="4.75"/><path d="m12 12 4 4"/></svg><span class="sr-only">搜索从者</span><input id="servant-search" type="search" placeholder="搜从者名或编号" autocomplete="off" disabled></label>
+        </div>
+        <p id="result-note" class="result-note" role="status">正在读取牵绊档案…</p>
+        <ul class="roster" id="roster"></ul>
+        <div class="empty" id="empty" hidden><span aria-hidden="true">◇</span><h3>没有符合条件的从者</h3><p>可以放宽职阶、星级或搜索条件。</p><button type="button" id="empty-reset">清除从者筛选</button></div>
+        <button type="button" id="more" class="more" hidden>显示更多从者</button>
+      </section>
+    </div>
+  </main>
+  <footer class="frame footer">
+    <div>资料来自 Mooncell · 快照 <time id="snapshot">—</time><br>
+    <a href="https://fgo.wiki/w/礼装图鉴">礼装图鉴</a><span> · </span><a href="https://fgo.wiki/w/英灵图鉴">英灵图鉴</a><span> · </span><a href="https://fgo.wiki/w/特性：持有灵衣之人">灵衣特性</a></div>
+    <p>查询的是礼装的适用对象。实际收益还受关卡及从者牵绊上限影响。<br><a href="https://deerflow.tech" target="_blank" rel="noopener" class="signature">Created By Deerflow</a></p>
+  </footer>
+  <dialog id="picker" aria-labelledby="picker-title">
+    <div class="dialog-head"><div><div class="overline">CRAFT ESSENCE</div><h2 id="picker-title">选择礼装</h2></div><button type="button" class="close" id="close-picker" aria-label="关闭礼装选择">×</button></div>
+    <label class="find picker-search"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="4.75"/><path d="m12 12 4 4"/></svg><span class="sr-only">搜索礼装</span><input type="search" id="craft-search" placeholder="搜礼装名、编号或加成条件" autocomplete="off"></label>
+    <div class="scope-options" id="scope-options" aria-label="礼装类型" role="group"></div>
+    <p id="picker-status" class="picker-status" role="status"></p>
+    <div id="picker-list" class="picker-list"></div>
+  </dialog>
+  <noscript><p class="frame">启用 JavaScript 后即可查询牵绊加成。</p></noscript>
+</body>
+</html>
