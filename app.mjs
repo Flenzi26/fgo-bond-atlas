@@ -1,4 +1,4 @@
-import { matchesSearch, queryServants, scope } from "./query.mjs";
+import { matchesSearch, queryServants, restrictedForms, scope } from "./query.mjs?v=2";
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, className, text) => {
@@ -92,6 +92,14 @@ function renderServant(s) {
   meta.append(cls, stars);
   if (!s.cn) meta.append(el("span", "", "国服未实装"));
   entry.append(el("strong", "servant-name", s.name), meta, el("span", "entry-id", `NO. ${padded(s.id)}`));
+  const forms = restrictedForms(selected, s, filters.region);
+  if (forms.length) {
+    const stages = forms.filter((form) => form.stage).map((form) => form.stage);
+    const costumes = forms.filter((form) => form.costume)
+      .map((form) => `灵衣「${form.costume.replace(/^简易灵衣：/u, "")}」`);
+    const labels = stages.length ? [`第 ${stages.join("、")} 阶段`, ...costumes] : costumes;
+    entry.append(el("span", "form-note", `仅${labels.join("或")}生效`));
+  }
   const arrow = el("span", "corner", "↗");
   arrow.setAttribute("aria-hidden", "true");
   a.append(imageBox("portrait", s.img, padded(s.id)), entry, arrow);
@@ -191,7 +199,7 @@ async function init() {
   $("load-error").hidden = true;
   $("desk").setAttribute("aria-busy", "true");
   try {
-    const response = await fetch("./data.json");
+    const response = await fetch("./data.json", { cache: "no-cache" });
     if (!response.ok) throw new Error(`Data request: ${response.status}`);
     data = await response.json();
     if (!data.crafts?.length || !data.servants?.length || !data.classes) throw new Error("Invalid catalogue");

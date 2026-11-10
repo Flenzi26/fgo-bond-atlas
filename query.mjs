@@ -4,16 +4,32 @@ const compounds = {
   "混沌且七骑士": ["混沌", "七骑士"],
 };
 
-export function benefits(craft, servant, region) {
+function matchesTraits(craft, servant, region, tags) {
   if (craft.category === "all") return true;
   if (craft.category === "class") return servant.class === craft.condition;
   if (craft.category !== "traits") throw new Error("Unknown craft category");
-  const has = (tag) => servant.tags.includes(tag);
+  const has = (tag) => tags.includes(tag);
   const condition = craft.condition;
   if (condition === "持有灵衣之人") return region === "cn" ? servant.costumeCn : servant.costume;
   if (condition === "星之力或恶") return has("星之力") || has("恶");
   if (Object.hasOwn(compounds, condition)) return compounds[condition].every(has);
   return has(condition);
+}
+
+function availableForms(servant, region) {
+  return servant.forms.filter((form) => region !== "cn" || form.cn !== false);
+}
+
+export function benefits(craft, servant, region) {
+  if (!servant.forms) return matchesTraits(craft, servant, region, servant.tags);
+  return availableForms(servant, region).some((form) => matchesTraits(craft, servant, region, form.tags));
+}
+
+export function restrictedForms(craft, servant, region) {
+  if (!servant.forms) return [];
+  const available = availableForms(servant, region);
+  const matching = available.filter((form) => matchesTraits(craft, servant, region, form.tags));
+  return matching.length < available.length ? matching : [];
 }
 
 export function scope(rows, region) {
